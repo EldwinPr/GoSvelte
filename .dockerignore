@@ -1,0 +1,10 @@
+node_modules/
+web/node_modules/
+bin/
+tmp/
+*.db
+.env
+.git
+web/dist
+static/*
+!static/index.html

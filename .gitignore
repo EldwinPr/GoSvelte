@@ -1,0 +1,19 @@
+# Go
+bin/
+tmp/
+*.exe
+*.test
+erp.db
+.env
+
+# Node / Svelte
+node_modules/
+web/dist/
+web/.svelte-kit/
+static/*
+!static/index.html
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
