@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { Landmark, TrendingUp, ArrowUpRight, ArrowDownRight, RefreshCcw } from 'lucide-svelte';
 	import { api } from '../lib/api';
+	import DataTable from '../lib/DataTable.svelte';
+	import type { Column } from '../lib/types';
 
 	interface CompanyBalance {
 		id: string;
@@ -10,128 +12,107 @@
 		updated_at: string;
 	}
 
-	let balances = $state<CompanyBalance[]>([]);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
+	let totalBalance = $state(0);
+	let isLoadingSummary = $state(true);
+	let tableRef: any = $state();
 
-	let totalBalance = $derived(balances.reduce((acc, curr) => acc + curr.balance, 0));
+	const columns: Column[] = [
+		{ key: 'account_name', label: 'Account Name', sortable: true },
+		{ key: 'balance', label: 'Current Balance', sortable: true, align: 'right', width: '200px' }
+	];
 
-	async function fetchBalances() {
-		isLoading = true;
+	async function fetchSummary() {
+		isLoadingSummary = true;
 		try {
-			balances = await api('/api/balances');
-		} catch (e: any) {
-			error = "Akses Ditolak: Anda memerlukan izin Manajer (10+) untuk melihat saldo keuangan.";
+			const result = await api<any>('/api/balances?page_size=100');
+			const items = result.items || [];
+			totalBalance = items.reduce((acc: number, curr: any) => acc + curr.balance, 0);
+		} catch (e) {
 		} finally {
-			isLoading = false;
+			isLoadingSummary = false;
 		}
 	}
 
 	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+		return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0);
 	}
 
-	onMount(fetchBalances);
+	onMount(fetchSummary);
 </script>
 
 <div class="space-y-8">
 	<!-- Header -->
-	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
 		<div>
-			<h2 class="h2 text-slate-900">Company Balance</h2>
-			<p class="text-surface-500 text-sm">Ringkasan real-time dari seluruh aset likuid dan akun perusahaan.</p>
+			<h2 class="h2 text-slate-900 font-black uppercase tracking-tight">Company Balance</h2>
+			<p class="text-slate-500 text-sm font-medium italic opacity-70">Ringkasan real-time dari seluruh aset likuid dan akun perusahaan.</p>
 		</div>
-		<button onclick={fetchBalances} class="btn preset-tonal-surface flex items-center gap-2">
-			<RefreshCcw size={16} class={isLoading ? 'animate-spin' : ''} />
+		<button onclick={() => { fetchSummary(); tableRef.fetchData(); }} class="btn bg-slate-100 border border-slate-200 text-slate-600 flex items-center gap-2 font-black uppercase text-xs">
+			<RefreshCcw size={16} class={isLoadingSummary ? 'animate-spin' : ''} />
 			Refresh
 		</button>
 	</div>
 
-	{#if error}
-		<div class="card p-12 text-center border border-error-500/30 bg-error-500/5">
-			<p class="text-error-500 font-bold mb-2 text-lg">Kunci Privasi Keuangan</p>
-			<p class="text-surface-500 text-sm">{error}</p>
-		</div>
-	{:else}
-		<!-- Stats Grid -->
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-			<div class="card p-6 bg-surface-100-900 border border-surface-200-800 space-y-2">
-				<div class="flex justify-between items-start">
-					<p class="text-sm font-medium text-surface-500">Total Aset Likuid</p>
-					<div class="p-2 bg-primary-500/10 rounded-lg text-primary-500">
-						<Landmark size={20} />
-					</div>
-				</div>
-				<h3 class="h3 font-bold">{formatCurrency(totalBalance)}</h3>
-				<div class="flex items-center gap-1 text-xs text-success-500">
-					<TrendingUp size={12} />
-					<span>+2.4% dari bulan lalu</span>
+	<!-- Stats Grid -->
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+		<div class="card p-8 bg-white border border-slate-200 space-y-3">
+			<div class="flex justify-between items-start">
+				<p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Aset Likuid</p>
+				<div class="p-2 bg-teal-50 rounded text-teal-600">
+					<Landmark size={24} />
 				</div>
 			</div>
-
-			<div class="card p-6 bg-surface-100-900 border border-surface-200-800 space-y-2">
-				<div class="flex justify-between items-start">
-					<p class="text-sm font-medium text-surface-500">Kas Operasional</p>
-					<div class="p-2 bg-success-500/10 rounded-lg text-success-500">
-						<ArrowUpRight size={20} />
-					</div>
-				</div>
-				<h3 class="h3 font-bold">{formatCurrency(totalBalance * 0.7)}</h3>
-				<p class="text-xs text-surface-500">Dialokasikan untuk operasional harian</p>
-			</div>
-
-			<div class="card p-6 bg-surface-100-900 border border-surface-200-800 space-y-2">
-				<div class="flex justify-between items-start">
-					<p class="text-sm font-medium text-surface-500">Dana Cadangan</p>
-					<div class="p-2 bg-warning-500/10 rounded-lg text-warning-500">
-						<ArrowDownRight size={20} />
-					</div>
-				</div>
-				<h3 class="h3 font-bold">{formatCurrency(totalBalance * 0.3)}</h3>
-				<p class="text-xs text-surface-500">Cadangan backup strategis</p>
+			<h3 class="h2 font-black text-slate-900">{formatCurrency(totalBalance)}</h3>
+			<div class="flex items-center gap-1 text-xs text-green-600 font-bold">
+				<TrendingUp size={14} />
+				<span>+2.4% vs last month</span>
 			</div>
 		</div>
 
-		<!-- Accounts Table -->
-		<section class="card bg-surface-100-900 border border-surface-200-800 overflow-hidden">
-			<header class="p-4 border-b border-surface-200-800 bg-surface-200-800/20">
-				<h4 class="h4 font-semibold text-slate-800">Financial Accounts</h4>
-			</header>
-			
-			{#if isLoading && balances.length === 0}
-				<div class="p-12 text-center text-surface-500">
-					<div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mb-4"></div>
-					<p>Loading financial data...</p>
+		<div class="card p-8 bg-white border border-slate-200 space-y-3">
+			<div class="flex justify-between items-start">
+				<p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kas Operasional</p>
+				<div class="p-2 bg-green-50 rounded text-green-600">
+					<ArrowUpRight size={24} />
 				</div>
+			</div>
+			<h3 class="h2 font-black text-slate-900">{formatCurrency(totalBalance * 0.7)}</h3>
+			<p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic">Estimated daily budget</p>
+		</div>
+
+		<div class="card p-8 bg-white border border-slate-200 space-y-3">
+			<div class="flex justify-between items-start">
+				<p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dana Cadangan</p>
+				<div class="p-2 bg-amber-50 rounded text-amber-600">
+					<ArrowDownRight size={24} />
+				</div>
+			</div>
+			<h2 class="h2 font-black text-slate-900">{formatCurrency(totalBalance * 0.3)}</h2>
+			<p class="text-[10px] text-slate-400 font-bold uppercase tracking-tight italic">Strategic backup funds</p>
+		</div>
+	</div>
+
+	<DataTable 
+		bind:this={tableRef}
+		endpoint="/api/balances" 
+		{columns} 
+		rowKey="id" 
+		searchPlaceholder="Cari nama akun..."
+	>
+		{#snippet cell(rowData, key)}
+			{@const row = rowData as CompanyBalance}
+			{#if key === 'account_name'}
+				<div class="flex items-center gap-3">
+					<div class="w-8 h-8 rounded bg-slate-50 flex items-center justify-center text-teal-600 border border-slate-100">
+						<Landmark size={16} />
+					</div>
+					<span class="font-bold text-slate-800 text-left">{row.account_name}</span>
+				</div>
+			{:else if key === 'balance'}
+				<span class="font-black text-teal-600">{formatCurrency(row.balance)}</span>
 			{:else}
-				<div class="overflow-x-auto">
-					<table class="table table-hover w-full text-left">
-						<thead class="bg-surface-200-800/50 text-surface-700-300">
-							<tr>
-								<th class="p-4">Account Name</th>
-								<th class="p-4 text-right">Current Balance</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-surface-200-800">
-							{#each balances as balance (balance.id)}
-								<tr class="hover:bg-surface-200-800/30 transition-colors">
-									<td class="p-4">
-										<div class="flex items-center gap-3">
-											<div class="w-8 h-8 rounded bg-surface-200-800 flex items-center justify-center text-primary-500">
-												<Landmark size={16} />
-											</div>
-											<span class="font-semibold text-slate-700">{balance.account_name}</span>
-										</div>
-									</td>
-									<td class="p-4 text-right font-bold text-primary-500">
-										{formatCurrency(balance.balance)}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+				{row[key as keyof CompanyBalance]}
 			{/if}
-		</section>
-	{/if}
+		{/snippet}
+	</DataTable>
 </div>

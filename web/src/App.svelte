@@ -3,6 +3,8 @@
   import { onMount } from 'svelte'
   import { auth } from './lib/auth.svelte'
   import Layout from './lib/Layout.svelte'
+  
+  // Pages
   import Dashboard from './pages/Dashboard.svelte'
   import Users from './pages/Users.svelte'
   import Explorer from './pages/Explorer.svelte'
@@ -12,6 +14,11 @@
   import RequisitionNew from './pages/RequisitionNew.svelte'
   import RequisitionList from './pages/RequisitionList.svelte'
   import RequisitionHistory from './pages/RequisitionHistory.svelte'
+  import RequisitionDetail from './pages/RequisitionDetail.svelte'
+  import InvoiceList from './pages/InvoiceList.svelte'
+  import InvoiceNew from './pages/InvoiceNew.svelte'
+  import InvoiceDetail from './pages/InvoiceDetail.svelte'
+  import Payments from './pages/Payments.svelte'
   import NotFound from './pages/NotFound.svelte'
 
   const routes = {
@@ -24,55 +31,70 @@
     '/purchasing/new': RequisitionNew,
     '/purchasing/list': RequisitionHistory,
     '/purchasing/approvals': RequisitionList,
-    // Add placeholders for the other routes to prevent 404s
-    '/invoices': Dashboard,
-    '/payments': Dashboard,
+    '/purchasing/detail': RequisitionDetail,
+    '/invoices': InvoiceList,
+    '/invoices/new': InvoiceNew,
+    '/invoices/detail': InvoiceDetail,
+    '/payments': Payments,
     '/credits': Dashboard,
     '*': NotFound,
   }
 
-  // Simple route guard logic
-  function handleRoute(event: any) {
-    if (isInitializing) return;
-    const detail = event.detail;
-    if (detail.location !== '/login' && !auth.user) {
-      push('/login');
+  let isReady = $state(false);
+  let initError = $state<string | null>(null);
+
+  async function initialize() {
+    // Forcibly clear any lingering dark mode
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove('dark');
+      localStorage.removeItem('theme-mode');
+    }
+    try {
+      await auth.init();
+      
+      const currentPath = window.location.hash.slice(1).split('?')[0] || '/';
+      if (currentPath !== '/login' && !auth.user) {
+        push('/login');
+      }
+    } catch (e: any) {
+      console.error("[App] Init Error:", e);
+      initError = e.message;
+    } finally {
+      isReady = true;
     }
   }
 
-  // Start Auth Check immediately (Eager)
-  const authPromise = auth.init();
-
-  let isInitializing = $state(true);
-
-  onMount(async () => {
-    try {
-      await authPromise;
-    } finally {
-      isInitializing = false;
-    }
-  });
+  onMount(initialize);
 </script>
 
-{#if isInitializing}
-  <div class="h-screen flex items-center justify-center bg-slate-50">
+{#if !isReady}
+  <div class="h-screen w-screen flex items-center justify-center bg-white text-slate-900">
     <div class="flex flex-col items-center gap-4">
-      <div class="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent"></div>
-      <p class="text-sm font-bold text-slate-400 uppercase tracking-widest">Initializing ERP...</p>
+      <div class="animate-spin rounded-full h-12 w-12 border-4 border-teal-500 border-t-transparent"></div>
+      <p class="text-sm font-bold uppercase tracking-widest opacity-50">System Loading...</p>
+    </div>
+  </div>
+{:else if initError}
+  <div class="h-screen w-screen flex items-center justify-center bg-red-50 p-4">
+    <div class="card p-8 bg-white border border-red-200 shadow-xl max-w-md">
+      <h1 class="text-red-600 font-bold mb-2 uppercase tracking-tight">System Boot Failure</h1>
+      <p class="text-sm text-slate-600">{initError}</p>
+      <button class="btn preset-tonal-surface mt-6 w-full" onclick={() => window.location.reload()}>Retry</button>
     </div>
   </div>
 {:else}
   {#if auth.user}
-    <Layout user={auth.user}>
-      <Router {routes} on:routeLoaded={handleRoute} />
+    <Layout>
+      <Router {routes} />
     </Layout>
   {:else}
-    <div class="min-h-screen bg-slate-50">
-      <Router {routes} on:routeLoaded={handleRoute} />
-    </div>
+    <Router {routes} />
   {/if}
 {/if}
 
 <style>
-  /* Base styles are handled in app.css and Skeleton UI */
+  :global(body) {
+    margin: 0;
+    padding: 0;
+  }
 </style>

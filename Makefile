@@ -24,7 +24,7 @@ build-frontend:
 
 # Build Go backend
 build-backend:
-	go build -o bin/server main.go
+	go build -o bin/server.exe main.go
 
 # Full build: Frontend first, then Backend
 build: build-frontend build-backend

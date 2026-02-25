@@ -28,13 +28,11 @@ func NewUserController(db *gorm.DB) *UserController {
 }
 
 func (c *UserController) Index(w http.ResponseWriter, r *http.Request) {
-	users, err := c.Service.GetAllUsers()
+	opts := c.ParseQuery(r)
+	result, err := c.Service.GetPaginatedUsers(opts.Page, opts.PageSize, opts.GetOrder("name asc"), opts.Search)
 	if err != nil {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	if users == nil {
-		users = []models.User{}
-	}
-	c.JSON(w, http.StatusOK, users)
+	c.JSON(w, http.StatusOK, result)
 }

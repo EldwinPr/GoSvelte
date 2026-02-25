@@ -34,6 +34,8 @@ func (m *CustomerCredit) BeforeCreate(tx *gorm.DB) error {
 // Invoice represents a billing document.
 type Invoice struct {
 	ID          string           `gorm:"primaryKey;type:char(26)" json:"id"`
+	CustomerID  string           `gorm:"type:char(26)" json:"customer_id"`
+	Customer    CustomerCredit   `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`
 	Number      string           `gorm:"uniqueIndex" json:"number"`
 	InvoiceDate time.Time        `json:"invoice_date"`
 	DueDate     time.Time        `json:"due_date"`
@@ -73,6 +75,9 @@ func (m *InvoiceDetail) BeforeCreate(tx *gorm.DB) error {
 type InvoicePayment struct {
 	ID           string               `gorm:"primaryKey;type:char(26)" json:"id"`
 	InvoiceID    string               `gorm:"type:char(26)" json:"invoice_id"`
+	BalanceID    string               `gorm:"type:char(26)" json:"balance_id"`
+	CreatedByID  string               `gorm:"type:char(26)" json:"created_by_id"`
+	CreatedBy    *User                `gorm:"foreignKey:CreatedByID" json:"created_by,omitempty"`
 	Amount       float64              `json:"amount"`
 	PaymentDate  time.Time            `json:"payment_date"`
 	Method       string               `json:"method"` // e.g., Cash, Bank Transfer, Credit Card
@@ -90,8 +95,10 @@ func (m *InvoicePayment) BeforeCreate(tx *gorm.DB) error {
 // CompanyTransaction represents the general ledger/financial transactions.
 type CompanyTransaction struct {
 	ID            string         `gorm:"primaryKey;type:char(26)" json:"id"`
+	BalanceID     string         `gorm:"type:char(26)" json:"balance_id"`
 	Date          time.Time      `json:"date"`
 	Description   string         `json:"description"`
+	Category      string         `json:"category"` // e.g., Sales, Purchase, Salary, Tax
 	Amount        float64        `json:"amount"`
 	Type          string         `json:"type"` // e.g., Debit, Credit
 	ReferenceID   string         `gorm:"type:char(26)" json:"reference_id"`
@@ -112,6 +119,7 @@ type Requisition struct {
 	ID            string         `gorm:"primaryKey;type:char(26)" json:"id"`
 	TransactionID string         `gorm:"type:char(26)" json:"transaction_id"`
 	UserID        *string        `gorm:"type:char(26)" json:"user_id"`
+	User          *User          `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	UserName      *string        `json:"user_name"`
 	Name          string         `json:"name"`     // Simple name/title of request
 	Category      string         `json:"category"` // e.g., Office, Travel, Food
@@ -120,7 +128,9 @@ type Requisition struct {
 	Type          string         `json:"type"`   // reimburse or cash
 	Status        string         `json:"status"` // pending, approved, given
 	ApprovedByID  *string        `gorm:"type:char(26)" json:"approved_by_id"`
+	ApprovedBy    *User          `gorm:"foreignKey:ApprovedByID" json:"approved_by,omitempty"`
 	ProcessedByID *string        `gorm:"type:char(26)" json:"processed_by_id"`
+	ProcessedBy   *User          `gorm:"foreignKey:ProcessedByID" json:"processed_by,omitempty"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`

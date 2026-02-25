@@ -10,6 +10,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
+
 	// "gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -33,7 +34,11 @@ func main() {
 	*/
 
 	// SQLite settings
-	db, err := gorm.Open(sqlite.Open("erp.db"), &gorm.Config{})
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		log.Fatal("DB_PATH environment variable is required but not set")
+	}
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
@@ -54,21 +59,21 @@ func main() {
 	var count int64
 	db.Model(&models.User{}).Count(&count)
 	if count == 0 {
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
 		admin := &models.User{
 			Name:      "Admin Developer",
-			Email:     "admin@senlab.com",
+			Email:     "admin@sentral.com",
 			Password:  string(hashedPassword),
 			Clearance: 20,
 		}
 		db.Create(admin)
-		log.Println("Created default admin: admin@senlab.com / password123")
+		log.Println("Created default admin: admin@sentral.com / password")
 	}
 
 	db.Model(&models.CompanyBalance{}).Count(&count)
 	if count == 0 {
 		mainBank := &models.CompanyBalance{
-			AccountName: "Main Bank Account",
+			AccountName: "OCBC",
 			Balance:     1000000.0,
 		}
 		db.Create(mainBank)

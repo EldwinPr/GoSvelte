@@ -2,8 +2,10 @@ package app
 
 import (
 	"context"
+	"errors"
 	"gosvelte/app/models"
 	"net/http"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -33,6 +35,16 @@ func (m *Middleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 		userID := cookie.Value
 		var user models.User
 		if err := m.DB.First(&user, "id = ?", userID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// If user not found, clear the cookie
+				http.SetCookie(w, &http.Cookie{
+					Name:     "session_token",
+					Value:    "",
+					Path:     "/",
+					Expires:  time.Unix(0, 0),
+					HttpOnly: true,
+				})
+			}
 			http.Error(w, "Unauthorized: Session invalid", http.StatusUnauthorized)
 			return
 		}

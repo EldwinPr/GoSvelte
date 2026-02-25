@@ -31,7 +31,7 @@ func NewDashboardController(db *gorm.DB) *DashboardController {
 func (c *DashboardController) Stats(w http.ResponseWriter, r *http.Request) {
 	balances, _ := c.BalanceService.GetAllBalance()
 	// Fetch top 5 recent transactions for stats
-	paginatedTransactions, _ := c.TransactionService.GetPaginatedTransactions(1, 5)
+	paginatedTransactions, _ := c.TransactionService.GetPaginatedTransactions(1, 5, "date DESC", "")
 
 	totalBalance := 0.0
 	for _, b := range balances {

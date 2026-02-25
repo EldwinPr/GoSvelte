@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { ShoppingCart, RefreshCcw, CheckCircle, Clock, Check, AlertCircle, User, CreditCard, Wallet, HandCoins } from 'lucide-svelte';
+	import { RefreshCcw, Check, User, CreditCard, Wallet } from 'lucide-svelte';
 	import { api } from '../lib/api';
 	import { auth } from '../lib/auth.svelte';
+	import DataTable from '../lib/DataTable.svelte';
+	import type { Column } from '../lib/types';
 
 	interface Requisition {
 		id: string;
@@ -13,60 +14,36 @@
 		status: 'pending' | 'approved' | 'given';
 		type: 'cash' | 'reimburse';
 		user_id: string | null;
+		user?: { name: string };
 		user_name: string | null;
 		approved_by_id: string | null;
 		processed_by_id: string | null;
 		created_at: string;
 	}
 
-	interface PaginatedResult {
-		items: Requisition[];
-		total_count: number;
-		page: number;
-		page_size: number;
-	}
+	const columns: Column[] = [
+		{ key: 'user_id', label: 'Pengaju / Tipe', sortable: true, width: '160px' },
+		{ key: 'category', label: 'Kategori & Nama', sortable: true },
+		{ key: 'amount', label: 'Jumlah', sortable: true, align: 'right', width: '160px' },
+		{ key: 'status', label: 'Status', sortable: true, align: 'center', width: '120px' },
+		{ key: 'actions', label: 'Tindakan', align: 'right', width: '120px' }
+	];
 
-	let requisitions = $state<Requisition[]>([]);
-	let totalCount = $state(0);
-	let currentPage = $state(1);
-	let pageSize = $state(10);
-	let isLoading = $state(true);
-	let error = $state<string | null>(null);
 	let isProcessing = $state<string | null>(null);
+	let tableRef: any = $state();
 
-	let totalPages = $derived(Math.ceil(totalCount / pageSize));
-
-	async function fetchRequisitions() {
-		isLoading = true;
-		try {
-			const result = await api<PaginatedResult>(`/api/requisitions?page=${currentPage}&page_size=${pageSize}&pending=true`);
-			requisitions = result.items || [];
-			totalCount = result.total_count || 0;
-		} catch (e: any) {
-			error = "Gagal memuat data pengajuan. Pastikan Anda memiliki izin yang cukup.";
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	function changePage(page: number) {
-		if (page >= 1 && (page <= totalPages || totalPages === 0)) {
-			currentPage = page;
-			fetchRequisitions();
-		}
-	}
-
-	async function updateStatus(id: string) {
+	async function updateStatus(id: string, action: 'approve' | 'reject') {
 		if (isProcessing) return;
 		isProcessing = id;
+		const endpoint = action === 'approve' ? '/api/requisitions/approve' : '/api/requisitions/reject';
 		try {
-			await api('/api/requisitions/approve', {
+			await api(endpoint, {
 				method: 'POST',
 				body: JSON.stringify({ id })
 			});
-			await fetchRequisitions();
+			tableRef.fetchData();
 		} catch (e: any) {
-			alert(`Gagal menyetujui: ` + e.message);
+			alert(`Gagal memproses: ` + e.message);
 		} finally {
 			isProcessing = null;
 		}
@@ -85,128 +62,71 @@
 			default: return 'badge preset-tonal-surface';
 		}
 	}
-
-	onMount(fetchRequisitions);
 </script>
 
 <div class="space-y-8">
 	<!-- Header -->
-	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+	<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
 		<div>
-			<h2 class="h2 text-slate-900">Persetujuan Pengajuan</h2>
-			<p class="text-surface-500 text-sm italic font-medium">Khusus Manager: Periksa dan berikan persetujuan untuk pengajuan staf.</p>
+			<h2 class="h2 text-slate-900 font-black uppercase tracking-tight">Persetujuan Pengajuan</h2>
+			<p class="text-slate-500 text-sm font-medium italic opacity-70">Khusus Manager: Periksa dan berikan persetujuan untuk pengajuan staf.</p>
 		</div>
-		<button onclick={fetchRequisitions} class="btn preset-tonal-surface flex items-center gap-2">
-			<RefreshCcw size={16} class={isLoading ? 'animate-spin' : ''} />
-			Refresh
-		</button>
 	</div>
 
-	{#if error}
-		<div class="card p-12 text-center border border-error-500/30 bg-error-500/5">
-			<p class="text-error-500 font-bold mb-2 text-lg">Kesalahan</p>
-			<p class="text-surface-500 text-sm">{error}</p>
-		</div>
-	{:else}
-		<!-- Requisitions Table -->
-		<section class="card bg-white border border-slate-200 overflow-hidden shadow-sm">
-			{#if isLoading && requisitions.length === 0}
-				<div class="p-12 text-center text-surface-500">
-					<div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent mb-4"></div>
-					<p>Loading requisitions...</p>
+	<DataTable 
+		bind:this={tableRef}
+		endpoint="/api/requisitions" 
+		{columns} 
+		rowKey="id" 
+		searchPlaceholder="Cari pengajuan..."
+		extraParams={{ pending: true }}
+	>
+		{#snippet cell(rowData, key)}
+			{@const row = rowData as Requisition}
+			{#if key === 'user_id'}
+				<div class="flex flex-col text-left">
+					<span class="text-sm font-bold text-slate-800">{row.user?.name || row.user_name || 'Anonim'}</span>
+					<span class="text-xs flex items-center gap-1 text-slate-500 font-medium">
+						{#if row.type === 'cash'} <Wallet size={12}/> {:else} <CreditCard size={12}/> {/if}
+						{row.type === 'cash' ? 'Tunai' : 'Reimburse'}
+					</span>
 				</div>
-			{:else if requisitions.length === 0}
-				<div class="p-12 text-center text-slate-400 italic bg-slate-50">
-					Tidak ada pengajuan yang menunggu persetujuan.
+			{:else if key === 'category'}
+				<div class="flex flex-col text-left">
+					<span class="text-xs font-bold text-teal-600 uppercase tracking-tighter">{row.category}</span>
+					<span class="text-sm font-medium text-slate-700 line-clamp-1">{row.name}</span>
 				</div>
-			{:else}
-				<div class="overflow-x-auto">
-					<table class="table table-hover w-full text-left">
-						<thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs">
-							<tr>
-								<th class="p-4 uppercase tracking-wider">Pengaju / Tipe</th>
-								<th class="p-4 uppercase tracking-wider">Kategori & Nama</th>
-								<th class="p-4 uppercase tracking-wider">Jumlah</th>
-								<th class="p-4 uppercase tracking-wider">Status</th>
-								<th class="p-4 uppercase tracking-wider text-right">Tindakan</th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-slate-100">
-							{#each requisitions as req (req.id)}
-								<tr class="hover:bg-slate-50 transition-colors">
-									<td class="p-4">
-										<div class="flex flex-col">
-											<span class="text-sm font-bold text-slate-800">{req.user_name || req.user_id || 'Anonim'}</span>
-											<span class="text-xs flex items-center gap-1 text-slate-500">
-												{#if req.type === 'cash'} <Wallet size={12}/> {:else} <CreditCard size={12}/> {/if}
-												{req.type === 'cash' ? 'Tunai' : 'Reimburse'}
-											</span>
-										</div>
-									</td>
-									<td class="p-4">
-										<div class="flex flex-col">
-											<span class="text-xs font-bold text-primary-600 uppercase tracking-tighter">{req.category}</span>
-											<span class="text-sm font-medium text-slate-700 line-clamp-1">{req.name}</span>
-										</div>
-									</td>
-									<td class="p-4 font-bold text-slate-900">
-										{formatCurrency(req.amount)}
-									</td>
-									<td class="p-4">
-										<span class={getStatusBadge(req.status)}>
-											{(req.status || '').toUpperCase()}
-										</span>
-									</td>
-									<td class="p-4 text-right">
-										{#if auth.user?.clearance >= 10}
-											<button 
-												class="btn btn-sm preset-filled-primary-500 font-bold flex items-center gap-2 ml-auto"
-												onclick={() => updateStatus(req.id)}
-												disabled={isProcessing === req.id}
-											>
-												{#if isProcessing === req.id}
-													<RefreshCcw size={14} class="animate-spin" />
-												{:else}
-													<Check size={14} />
-												{/if}
-												Setujui
-											</button>
-										{:else}
-											<span class="text-slate-400 text-xs italic text-right block">Khusus Manager</span>
-										{/if}
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-
-				<!-- Pagination Footer -->
-				<footer class="p-4 border-t border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
-					<p class="text-xs text-slate-500 font-medium">
-						Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} requisitions
-					</p>
-					<div class="flex gap-2">
+			{:else if key === 'amount'}
+				<span class="font-bold text-slate-900">{formatCurrency(row.amount)}</span>
+			{:else if key === 'status'}
+				<span class={getStatusBadge(row.status)}>{row.status.toUpperCase()}</span>
+			{:else if key === 'actions'}
+				{#if (auth.user?.clearance ?? 0) >= 10}
+					<div class="flex justify-end gap-2">
 						<button 
-							class="btn btn-sm preset-tonal-surface font-bold" 
-							onclick={() => changePage(currentPage - 1)}
-							disabled={currentPage === 1}
+							class="btn btn-xs preset-tonal-error font-black uppercase tracking-widest"
+							onclick={() => updateStatus(row.id, 'reject')}
+							disabled={isProcessing === row.id}
 						>
-							Previous
+							Tolak
 						</button>
-						<div class="flex items-center gap-2 px-4 text-xs font-bold text-slate-600">
-							Page {currentPage} of {totalPages || 1}
-						</div>
 						<button 
-							class="btn btn-sm preset-tonal-surface font-bold" 
-							onclick={() => changePage(currentPage + 1)}
-							disabled={currentPage === totalPages || totalPages === 0}
+							class="btn btn-xs bg-teal-600 text-white font-black uppercase tracking-widest flex items-center gap-2 shadow-md shadow-teal-600/20"
+							onclick={() => updateStatus(row.id, 'approve')}
+							disabled={isProcessing === row.id}
 						>
-							Next
+							{#if isProcessing === row.id}
+								<RefreshCcw size={12} class="animate-spin" />
+							{:else}
+								<Check size={12} />
+							{/if}
+							Setujui
 						</button>
 					</div>
-				</footer>
+				{:else}
+					<span class="text-slate-400 text-xs italic text-right block font-bold">KHUSUS MANAGER</span>
+				{/if}
 			{/if}
-		</section>
-	{/if}
+		{/snippet}
+	</DataTable>
 </div>

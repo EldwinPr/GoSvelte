@@ -28,40 +28,40 @@
 	<div class="w-full max-w-md space-y-8">
 		<!-- Logo -->
 		<div class="text-center">
-			<div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-500 text-white mb-4 shadow-xl shadow-primary-500/20">
+			<div class="inline-flex items-center justify-center w-16 h-16 bg-teal-600 text-white mb-4">
 				<CloudUpload size={40} />
 			</div>
-			<h1 class="h1 font-extrabold text-slate-900">Sentral Finance</h1>
-			<p class="text-slate-500 mt-2">Sign in to your corporate financial dashboard</p>
+			<h1 class="h1 font-black text-slate-900 uppercase tracking-tight">Sentral Finance</h1>
+			<p class="text-slate-500 mt-2 font-medium">Sign in to your corporate financial dashboard</p>
 		</div>
 
 		<!-- Card -->
-		<div class="card p-8 bg-white border border-slate-200 shadow-xl">
+		<div class="card p-8 bg-white border border-slate-200">
 			{#if error}
 				<aside class="alert preset-tonal-error mb-6">
 					<div class="alert-message">
-						<p class="text-sm font-medium">{error}</p>
+						<p class="text-sm font-bold">{error}</p>
 					</div>
 				</aside>
 			{/if}
 
-			<form onsubmit={handleSubmit} class="space-y-6">
+			<form onsubmit={handleSubmit} class="space-y-6 text-left">
 				<label class="label">
-					<span class="text-sm font-bold text-slate-700 flex items-center gap-2">
-						<Mail size={16} /> Email Address
+					<span class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+						<Mail size={14} /> Email Address
 					</span>
 					<input 
 						class="input" 
 						type="email" 
 						bind:value={email} 
-						placeholder="admin@erp.com" 
+						placeholder="user@system.com" 
 						required 
 					/>
 				</label>
 
 				<label class="label">
-					<span class="text-sm font-bold text-slate-700 flex items-center gap-2">
-						<Lock size={16} /> Password
+					<span class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+						<Lock size={14} /> Password
 					</span>
 					<input 
 						class="input" 
@@ -72,17 +72,17 @@
 					/>
 				</label>
 
-				<div class="flex items-center justify-between pt-2">
-					<label class="flex items-center gap-2 cursor-pointer">
+				<div class="flex items-center justify-between pt-2 text-left">
+					<label class="flex items-center gap-2 cursor-pointer group">
 						<input type="checkbox" class="checkbox" />
-						<span class="text-sm text-slate-600">Remember me</span>
+						<span class="text-sm text-slate-600 font-bold group-hover:text-teal-600">Remember me</span>
 					</label>
-					<a href="#/forgot" class="text-sm text-primary-600 font-medium hover:underline">Forgot password?</a>
+					<a href="#/forgot" class="text-sm text-teal-600 font-black hover:underline">Forgot?</a>
 				</div>
 
 				<button 
 					type="submit" 
-					class="btn preset-filled-primary-500 w-full py-3 font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary-500/30"
+					class="btn bg-teal-600 text-white w-full py-4 font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
 					disabled={isLoading}
 				>
 					{#if isLoading}
@@ -96,9 +96,8 @@
 		</div>
 
 		<!-- Footer -->
-		<p class="text-center text-sm text-slate-400">
-			Protected by enterprise-grade security. <br/>
-			<span class="font-mono text-xs opacity-50 uppercase tracking-tighter">GoSvelte v0.1.0-alpha</span>
+		<p class="text-center text-xs text-slate-400 font-bold uppercase tracking-[0.2em] opacity-50">
+			GoSvelte v0.1.0-alpha
 		</p>
 	</div>
 </div>

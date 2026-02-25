@@ -6,7 +6,6 @@ import (
 	"gosvelte/app/repositories"
 	"gosvelte/app/services"
 	"net/http"
-	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -27,16 +26,8 @@ func NewTransactionController(db *gorm.DB) *TransactionController {
 }
 
 func (c *TransactionController) Index(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page < 1 {
-		page = 1
-	}
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
-	if pageSize < 1 {
-		pageSize = 10
-	}
-
-	result, err := c.Service.GetPaginatedTransactions(page, pageSize)
+	opts := c.ParseQuery(r)
+	result, err := c.Service.GetPaginatedTransactions(opts.Page, opts.PageSize, opts.GetOrder("date desc"), opts.Search)
 	if err != nil {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return

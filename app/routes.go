@@ -33,6 +33,9 @@ func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 
 	// Explorer
 	mux.HandleFunc("GET /api/explorer", mw.Auth(mw.RequireClearance(20, explorerController.GetTableData)))
+	mux.HandleFunc("POST /api/explorer", mw.Auth(mw.RequireClearance(20, explorerController.CreateRecord)))
+	mux.HandleFunc("PUT /api/explorer", mw.Auth(mw.RequireClearance(20, explorerController.UpdateRecord)))
+	mux.HandleFunc("DELETE /api/explorer", mw.Auth(mw.RequireClearance(20, explorerController.DeleteRecord)))
 
 	// Dashboard
 	mux.HandleFunc("GET /api/dashboard/stats", mw.Auth(dashboardController.Stats))
@@ -42,14 +45,20 @@ func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 
 	// Invoices (Finance 0+)
 	mux.HandleFunc("GET /api/invoices", mw.Auth(invoiceController.Index))
+	mux.HandleFunc("GET /api/invoices/show", mw.Auth(invoiceController.Show))
+	mux.HandleFunc("GET /api/payments", mw.Auth(invoiceController.Payments))
+	mux.HandleFunc("GET /api/payments/summary", mw.Auth(invoiceController.PaymentSummary))
 	mux.HandleFunc("POST /api/invoices", mw.Auth(invoiceController.Create))
+	mux.HandleFunc("PUT /api/invoices", mw.Auth(invoiceController.Update))
 	mux.HandleFunc("POST /api/invoices/pay", mw.Auth(invoiceController.Pay))
 
 	// Requisitions
 	mux.HandleFunc("GET /api/requisitions", mw.Auth(requisitionController.Index))
+	mux.HandleFunc("GET /api/requisitions/show", mw.Auth(requisitionController.Show))
 	mux.HandleFunc("POST /api/requisitions", mw.Auth(requisitionController.Create))
 	// Approval (Manager 10+)
 	mux.HandleFunc("POST /api/requisitions/approve", mw.Auth(mw.RequireClearance(10, requisitionController.Approve)))
+	mux.HandleFunc("POST /api/requisitions/reject", mw.Auth(mw.RequireClearance(10, requisitionController.Reject)))
 	// Disbursement (Finance 0+)
 	mux.HandleFunc("POST /api/requisitions/give", mw.Auth(mw.RequireClearance(0, requisitionController.MarkGiven)))
 
@@ -57,7 +66,7 @@ func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 	mux.HandleFunc("GET /api/transactions", mw.Auth(transactionController.Index))
 
 	// Balance (Manager 10+)
-	mux.HandleFunc("GET /api/balances", mw.Auth(mw.RequireClearance(10, balanceController.Index)))
+	mux.HandleFunc("GET /api/balances", mw.Auth(mw.RequireClearance(0, balanceController.Index)))
 
 	// --- 3. Static & SPA Routes ---
 	fileServer := http.FileServer(http.Dir("./static"))

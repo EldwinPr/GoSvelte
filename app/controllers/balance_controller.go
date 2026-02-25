@@ -21,12 +21,13 @@ func NewBalanceController(db *gorm.DB) *BalanceController {
 }
 
 func (c *BalanceController) Index(w http.ResponseWriter, r *http.Request) {
-	balances, err := c.Service.GetAllBalance()
+	opts := c.ParseQuery(r)
+	result, err := c.Service.GetPaginatedBalance(opts.Page, opts.PageSize, opts.GetOrder("account_name asc"), opts.Search)
 	if err != nil {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(w, http.StatusOK, balances)
+	c.JSON(w, http.StatusOK, result)
 }
 
 func (c *BalanceController) Show(w http.ResponseWriter, r *http.Request) {
