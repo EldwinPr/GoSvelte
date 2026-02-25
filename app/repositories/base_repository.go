@@ -13,9 +13,9 @@ func (r *BaseRepository[T]) FindAll() ([]T, error) {
 	return items, err
 }
 
-func (r *BaseRepository[T]) FindByID(id uint) (*T, error) {
+func (r *BaseRepository[T]) FindByID(id any) (*T, error) {
 	var item T
-	err := r.DB.First(&item, id).Error
+	err := r.DB.First(&item, "id = ?", id).Error
 	return &item, err
 }
 

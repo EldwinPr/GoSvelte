@@ -1,0 +1,36 @@
+ERP PROJECT PLAN: VIEWS & SIDEBAR STRUCTURE
+===========================================
+
+CLEARANCE LEVELS REFERENCE:
+---------------------------
+- 0: FINANCE (Standard data entry and viewing)
+- 10: FINANCE MANAGER (Approval authority and high-level financial reports)
+- 20: DEVELOPER (Full system access, CRUD, and debugging tools)
+
+SIDEBAR & VIEWS MAPPING:
+-------------------------
+
+| SIDEBAR GROUP | MENU ITEM          | VIEW PURPOSE                                      | MIN CLEARANCE |
+| :------------ | :----------------- | :------------------------------------------------ | :------------ |
+| MAIN          | Dashboard          | KPIs: Revenue, Outstanding Debt, Pending Req.     | 0             |
+| FINANCE       | Invoices           | Manage billing documents (List & Detail pages)    | 0             |
+| FINANCE       | Payments           | Log of all invoice payments received              | 0             |
+| FINANCE       | Customer Credits   | Manage customer credit limits and usage           | 0             |
+| PURCHASING    | New Requisition    | PAGE: Form to create a new Buy Request            | 0             |
+| PURCHASING    | Approvals          | PAGE: Table to Approve/Reject requisitions        | 10            |
+| REPORTS       | Transactions       | Audit trail of all CompanyTransactions            | 0             |
+| REPORTS       | Company Balance    | PAGE: View-only financial health summary          | 10            |
+| SYSTEM        | User Management    | Manage staff accounts and clearance levels        | 20            |
+| SYSTEM        | Database Explorer  | Raw CRUD access to all tables                     | 20            |
+
+LAYOUT SPECIFICATIONS (AdminLTE Style with Skeleton UI v3):
+---------------------------------------------------------
+- SIDEBAR: Dynamic visibility. Items hidden if clearance is below requirement.
+- TOP BAR: 
+    - Breadcrumbs (e.g., Purchasing > New Requisition).
+    - User Profile (Displaying current level name).
+    - Sidebar Toggle.
+- PAGE STRUCTURE:
+    - Dedicated full pages for major tasks (Create Requisition, Approvals).
+    - Modals only for "View Details" or quick updates.
+    - Card-based layouts using Skeleton v3 components.

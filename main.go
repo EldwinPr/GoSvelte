@@ -9,7 +9,9 @@ import (
 	"gosvelte/app/models"
 
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
+	"golang.org/x/crypto/bcrypt"
+	// "gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -19,19 +21,59 @@ func main() {
 	}
 
 	// Database Initialization
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		// Fallback for local development if not provided
-		dsn = "host=localhost user=user password=pass dbname=erp port=5432 sslmode=disable"
-	}
+	// PostgreSQL settings (commented out)
+	/*
+		dsn := os.Getenv("DB_DSN")
+		if dsn == "" {
+			// Fallback for local development if not provided
+			dsn = "host=localhost user=user password=pass dbname=erp port=5432 sslmode=disable"
+		}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	*/
+
+	// SQLite settings
+	db, err := gorm.Open(sqlite.Open("erp.db"), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 
 	// Auto-Migrate
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(
+		&models.User{},
+		&models.CustomerCredit{},
+		&models.Invoice{},
+		&models.InvoiceDetail{},
+		&models.InvoicePayment{},
+		&models.CompanyTransaction{},
+		&models.Requisition{},
+		&models.CompanyBalance{},
+	)
+
+	// Seed Initial Data (Prototype only)
+	var count int64
+	db.Model(&models.User{}).Count(&count)
+	if count == 0 {
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		admin := &models.User{
+			Name:      "Admin Developer",
+			Email:     "admin@senlab.com",
+			Password:  string(hashedPassword),
+			Clearance: 20,
+		}
+		db.Create(admin)
+		log.Println("Created default admin: admin@senlab.com / password123")
+	}
+
+	db.Model(&models.CompanyBalance{}).Count(&count)
+	if count == 0 {
+		mainBank := &models.CompanyBalance{
+			AccountName: "Main Bank Account",
+			Balance:     1000000.0,
+		}
+		db.Create(mainBank)
+		log.Println("Created initial company balance: 1,000,000.0")
+	}
 
 	// Register Routes and Start Server
 	mux := app.RegisterRoutes(db)

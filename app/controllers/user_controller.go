@@ -33,5 +33,8 @@ func (c *UserController) Index(w http.ResponseWriter, r *http.Request) {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if users == nil {
+		users = []models.User{}
+	}
 	c.JSON(w, http.StatusOK, users)
 }

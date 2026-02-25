@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+/* Skeleton UI v3 themes - Using Seafoam for Teal palette */
+@import "../node_modules/@skeletonlabs/skeleton/dist/themes/seafoam.css";
+/* Skeleton UI v3 core styles */
+@import "../node_modules/@skeletonlabs/skeleton/dist/index.css";
+
+@source "../node_modules/@skeletonlabs/skeleton/dist/**/*.svelte";
+
+@layer base {
+  /* Enforce Light Mode and Teal Palette */
+  :root {
+    color-scheme: light;
+  }
+  
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
