@@ -111,9 +111,16 @@ func (m *CompanyTransaction) BeforeCreate(tx *gorm.DB) error {
 type Requisition struct {
 	ID            string         `gorm:"primaryKey;type:char(26)" json:"id"`
 	TransactionID string         `gorm:"type:char(26)" json:"transaction_id"`
+	UserID        *string        `gorm:"type:char(26)" json:"user_id"`
+	UserName      *string        `json:"user_name"`
+	Name          string         `json:"name"`     // Simple name/title of request
+	Category      string         `json:"category"` // e.g., Office, Travel, Food
 	Description   string         `json:"description"`
 	Amount        float64        `json:"amount"`
-	Status        string         `json:"status"` // e.g., Pending, Approved, Completed
+	Type          string         `json:"type"`   // reimburse or cash
+	Status        string         `json:"status"` // pending, approved, given
+	ApprovedByID  *string        `gorm:"type:char(26)" json:"approved_by_id"`
+	ProcessedByID *string        `gorm:"type:char(26)" json:"processed_by_id"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`

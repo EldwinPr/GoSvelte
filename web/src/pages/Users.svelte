@@ -127,7 +127,7 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-slate-100">
-							{#each users as user}
+							{#each users as user (user.id)}
 								{@const info = getClearanceLabel(user.clearance)}
 								<tr class="hover:bg-slate-50 transition-colors">
 									<td class="p-4">

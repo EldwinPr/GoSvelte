@@ -6,6 +6,7 @@ import (
 	"gosvelte/app/repositories"
 	"gosvelte/app/services"
 	"net/http"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -33,12 +34,32 @@ func NewRequisitionController(db *gorm.DB) *RequisitionController {
 }
 
 func (c *RequisitionController) Index(w http.ResponseWriter, r *http.Request) {
-	requisitions, err := c.Service.GetAllRequisitions()
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	userID := r.URL.Query().Get("user_id")
+	pending := r.URL.Query().Get("pending") == "true"
+
+	var result interface{}
+	var err error
+
+	if pending {
+		result, err = c.Service.GetPendingRequisitions(page, pageSize)
+	} else {
+		result, err = c.Service.GetPaginatedRequisitions(page, pageSize, userID)
+	}
+
 	if err != nil {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(w, http.StatusOK, requisitions)
+	c.JSON(w, http.StatusOK, result)
 }
 
 func (c *RequisitionController) Create(w http.ResponseWriter, r *http.Request) {
@@ -64,9 +85,31 @@ func (c *RequisitionController) Approve(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := c.Service.ApproveRequisition(input.ID); err != nil {
+	// In a real app, we'd get the current user ID from the context (set by middleware)
+	user := r.Context().Value("user").(*models.User)
+
+	if err := c.Service.ApproveRequisition(input.ID, user.ID); err != nil {
 		c.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(w, http.StatusOK, map[string]string{"message": "Requisition approved"})
+}
+
+func (c *RequisitionController) MarkGiven(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		c.Error(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	// In a real app, we'd get the current user ID from the context (set by middleware)
+	user := r.Context().Value("user").(*models.User)
+
+	if err := c.Service.MarkAsGiven(input.ID, user.ID); err != nil {
+		c.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(w, http.StatusOK, map[string]string{"message": "Requisition marked as given"})
 }

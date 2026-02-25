@@ -41,6 +41,6 @@ func (s *TransactionService) EditTransaction(transaction *models.CompanyTransact
 	return s.Repo.Update(transaction)
 }
 
-func (s *TransactionService) GetAllTransactions() ([]models.CompanyTransaction, error) {
-	return s.Repo.FindAll()
+func (s *TransactionService) GetPaginatedTransactions(page, pageSize int) (*repositories.PaginationResult[models.CompanyTransaction], error) {
+	return s.Repo.Paginate(page, pageSize, s.DB.Order("date DESC"))
 }

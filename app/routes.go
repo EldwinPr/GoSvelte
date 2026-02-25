@@ -50,6 +50,8 @@ func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 	mux.HandleFunc("POST /api/requisitions", mw.Auth(requisitionController.Create))
 	// Approval (Manager 10+)
 	mux.HandleFunc("POST /api/requisitions/approve", mw.Auth(mw.RequireClearance(10, requisitionController.Approve)))
+	// Disbursement (Finance 0+)
+	mux.HandleFunc("POST /api/requisitions/give", mw.Auth(mw.RequireClearance(0, requisitionController.MarkGiven)))
 
 	// Transactions (Finance 0+)
 	mux.HandleFunc("GET /api/transactions", mw.Auth(transactionController.Index))
@@ -59,14 +61,25 @@ func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 
 	// --- 3. Static & SPA Routes ---
 	fileServer := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
+	
+	// Cache-Control middleware for hashed static assets (JS/CSS)
+	staticWithCache := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable") 
+		fileServer.ServeHTTP(w, r)
+	})
+
+	mux.Handle("/static/", http.StripPrefix("/static/", staticWithCache))
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		path := "./static" + r.URL.Path
 		if _, err := os.Stat(path); os.IsNotExist(err) {
+			// index.html should not be cached long to ensure users get updates
+			w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 			http.ServeFile(w, r, "./static/index.html")
 			return
 		}
+		// Root assets (icons, etc)
+		w.Header().Set("Cache-Control", "public, max-age=86400")
 		fileServer.ServeHTTP(w, r)
 	})
 

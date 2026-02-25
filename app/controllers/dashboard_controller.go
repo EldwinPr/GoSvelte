@@ -30,7 +30,8 @@ func NewDashboardController(db *gorm.DB) *DashboardController {
 
 func (c *DashboardController) Stats(w http.ResponseWriter, r *http.Request) {
 	balances, _ := c.BalanceService.GetAllBalance()
-	transactions, _ := c.TransactionService.GetAllTransactions()
+	// Fetch top 5 recent transactions for stats
+	paginatedTransactions, _ := c.TransactionService.GetPaginatedTransactions(1, 5)
 
 	totalBalance := 0.0
 	for _, b := range balances {
@@ -38,9 +39,9 @@ func (c *DashboardController) Stats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stats := map[string]interface{}{
-		"total_balance":      totalBalance,
-		"transaction_count":  len(transactions),
-		"recent_transactions": transactions, // Simplified
+		"total_balance":       totalBalance,
+		"transaction_count":   paginatedTransactions.TotalCount,
+		"recent_transactions": paginatedTransactions.Items,
 	}
 
 	c.JSON(w, http.StatusOK, stats)

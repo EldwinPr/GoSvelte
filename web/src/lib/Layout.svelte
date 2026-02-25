@@ -62,8 +62,9 @@
 			label: 'PURCHASING',
 			minClearance: 0,
 			items: [
-				{ label: 'New Requisition', icon: ShoppingCart, path: '/purchasing/new', minClearance: 0 },
-				{ label: 'Approvals', icon: CheckCircle, path: '/purchasing/approvals', minClearance: 10 }
+				{ label: 'Pengajuan Baru', icon: ShoppingCart, path: '/purchasing/new', minClearance: 0 },
+				{ label: 'Daftar Pengajuan', icon: FileText, path: '/purchasing/list', minClearance: 0 },
+				{ label: 'Persetujuan (Manager)', icon: CheckCircle, path: '/purchasing/approvals', minClearance: 10 }
 			]
 		},
 		{

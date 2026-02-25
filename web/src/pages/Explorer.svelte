@@ -50,8 +50,8 @@
 		</div>
 		
 		<div class="flex items-center gap-2">
-			<select class="select w-auto min-w-[200px] bg-slate-50 border-slate-200" bind:value={selectedTable} onchange={fetchData}>
-				{#each tables as table}
+			<select class="select w-auto min-w-200 bg-slate-50 border-slate-200" bind:value={selectedTable} onchange={fetchData}>
+				{#each tables as table (table.id)}
 					<option value={table.id}>{table.name}</option>
 				{/each}
 			</select>
@@ -87,7 +87,7 @@
 				<table class="table table-hover table-compact w-full text-xs">
 					<thead class="bg-slate-100 sticky top-0 z-10 border-b border-slate-200">
 						<tr>
-							{#each columns as col}
+							{#each columns as col (col)}
 								<th class="p-3 uppercase font-bold text-slate-600 tracking-wider">
 									{col.replace(/_/g, ' ')}
 								</th>
@@ -95,9 +95,9 @@
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-slate-100">
-						{#each data as row}
+						{#each data as row (row.id || JSON.stringify(row))}
 							<tr class="hover:bg-slate-50 transition-colors">
-								{#each columns as col}
+								{#each columns as col (col)}
 									<td class="p-3 whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px] text-slate-700" title={String(row[col])}>
 										{row[col] === null ? 'NULL' : String(row[col])}
 									</td>
