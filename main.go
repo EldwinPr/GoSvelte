@@ -31,7 +31,20 @@ func main() {
 	}
 
 	// Auto-Migrate
-	db.AutoMigrate(&models.User{})
+	db.AutoMigrate(
+		&models.Tenant{},
+		&models.User{},
+		&models.Account{},
+		&models.Category{},
+		&models.Transfer{},
+		&models.RecurringPayment{},
+		&models.Debt{},
+		&models.DebtInstallment{},
+		&models.Transaction{},
+		&models.Wishlist{},
+		&models.Budget{},
+		&models.SavingsGoal{},
+	)
 
 	// Register Routes and Start Server
 	mux := app.RegisterRoutes(db)

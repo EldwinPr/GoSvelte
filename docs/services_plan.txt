@@ -1,0 +1,68 @@
+# GoSvelte Money Tracker - Service Architecture Plan
+
+This document outlines the planned services and their core functions.
+
+## 1. AuthService
+Manages tenancy isolation and user access.
+- Register: Creates a new Tenant and the first User.
+- Login: Authenticates users and provides session context.
+- GetContext: Retrieves user profile and TenantID.
+
+## 2. AccountService
+Manages financial accounts (Bank, Cash, etc.).
+- CreateAccount: Initializes a new account for a tenant.
+- GetDashboardSummary: Calculates net worth for a tenant.
+- Reconcile: Audits stored balance against SUM(transactions).
+
+## 3. TransactionService
+The core ledger engine.
+- RecordTransaction: Creates Income/Expense and updates balance atomically.
+- UpdateTransaction: Adjusts balance based on delta changes.
+- DeleteTransaction: Reverts balance impact and soft-deletes record.
+- GetLedger: Returns paginated, filtered transaction lists.
+
+## 4. TransferService
+Handles movement between accounts.
+- ExecuteTransfer: Atomic withdraw/deposit/fee logic.
+- ReverseTransfer: Rolls back account balances and fees.
+
+## 5. DebtService
+Manages liabilities and lending.
+- CreateDebt: Records new Lent or Borrowed funds.
+- AddInstallment: Records payment, updates account, and reduces debt balance.
+- GetDebtStatus: Summarizes active debts and due dates.
+
+## 6. RecurringPaymentService
+Automation for repeating entries.
+- CreateSchedule: Sets up templates (e.g., Monthly Rent).
+- ProcessPending: Generates transactions for due schedules.
+- ToggleSchedule: Activates or deactivates automation.
+
+## 7. BudgetService
+Manages spending limits and discipline.
+- SetBudget: Defines a spending limit for a specific Category or a Global limit.
+- GetPerformance: Returns actual vs. budgeted amounts for the current period.
+- CheckLimit: Internal helper to warn if a new transaction exceeds the budget.
+
+## 8. WishlistService
+Manages aspirational items (things to buy).
+- CreateItem: Adds a new item with 1-6 scale ratings for Need, Want, and Productivity.
+- UpdateProgress: Manually adjusts the amount "saved" or allocated to this item.
+- GetRankedWishlist: 
+    1. Fetches all active items for a tenant.
+    2. Retrieves current Total Net Worth.
+    3. Calculates "Financial Impact Penalty" for each item (Price vs. Balance).
+    4. Generates a "Smart Score" and sorts the list by feasibility and impact.
+- MarkPurchased: Handles final purchase logic (triggers a Transaction and archives the item).
+
+## 9. SavingsGoalService
+Manages long-term financial milestones (e.g., Emergency Fund).
+- CreateGoal: Sets a target amount, date, and optional dedicated account.
+- AllocateFunds: Transfers balance (virtually) toward the goal.
+- GetProgress: Calculates percentage completion and projected completion date.
+
+## 10. ReportingService
+Insights and analytics.
+- GetSpendingBreakdown: Groups expenses by Category.
+- GetCashFlow: Monthly Income vs. Expense comparison.
+- GetNetWorthHistory: Tracks the growth of total balance over time.

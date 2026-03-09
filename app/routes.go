@@ -12,11 +12,12 @@ import (
 func RegisterRoutes(db *gorm.DB) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// --- 1. Controllers (Internal DI is handled in constructors) ---
-	userController := controllers.NewUserController(db)
+	// --- 1. Controllers ---
+	authController := controllers.NewAuthController(db)
 
 	// --- 2. API Routes ---
-	mux.HandleFunc("GET /api/users", userController.Index)
+	mux.HandleFunc("POST /api/auth/register", authController.Register)
+	mux.HandleFunc("POST /api/auth/login", authController.Login)
 
 	// --- 3. Static & SPA Routes ---
 	fileServer := http.FileServer(http.Dir("./static"))
