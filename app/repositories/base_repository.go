@@ -9,11 +9,13 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+var (
+	entropy = ulid.Monotonic(rand.New(rand.NewSource(time.Now().UnixNano())), 0)
+)
+
 // GenerateULID creates a new unique sortable string ID.
 func GenerateULID() string {
-	t := time.Now()
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(t.UnixNano())), 0)
-	return ulid.MustNew(ulid.Timestamp(t), entropy).String()
+	return ulid.MustNew(ulid.Timestamp(time.Now()), entropy).String()
 }
 
 // Pagination holds paging parameters and results.

@@ -184,3 +184,107 @@ type SavingsGoal struct {
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTHENTICATION & SESSION MODELS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Session stores refresh tokens for JWT authentication.
+type Session struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	UserID    string         `gorm:"index" json:"user_id"`
+	User      User           `json:"user,omitempty"`
+	TokenHash string         `json:"-"`                  // Hashed refresh token (never exposed)
+	ExpiresAt time.Time      `json:"expires_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	RevokedAt *time.Time     `json:"revoked_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// UserSettings stores user preferences and configuration.
+type UserSettings struct {
+	ID              string         `gorm:"primaryKey" json:"id"`
+	UserID          string         `gorm:"uniqueIndex" json:"user_id"`
+	User            User           `json:"user,omitempty"`
+	DefaultCurrency string         `json:"default_currency" gorm:"default:'USD'"`
+	DateFormat      string         `json:"date_format" gorm:"default:'2006-01-02'"`
+	Theme           string         `json:"theme" gorm:"default:'light'"`
+	Language        string         `json:"language" gorm:"default:'en'"`
+	Notifications   bool           `json:"notifications" gorm:"default:true"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CATEGORIZATION & TAGGING
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Tag allows flexible categorization of transactions (many-to-many).
+type Tag struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	TenantID  string         `gorm:"index" json:"tenant_id"`
+	Name      string         `json:"name"`
+	Color     string         `json:"color"` // Hex color code
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// TransactionTag is the join table for many-to-many relationship.
+type TransactionTag struct {
+	TransactionID string    `gorm:"primaryKey" json:"transaction_id"`
+	TagID        string    `gorm:"primaryKey" json:"tag_id"`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ATTACHMENTS & AUDIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Attachment stores receipt images and files linked to transactions.
+type Attachment struct {
+	ID            string         `gorm:"primaryKey" json:"id"`
+	TenantID      string         `gorm:"index" json:"tenant_id"`
+	TransactionID *string        `gorm:"index" json:"transaction_id,omitempty"`
+	Transaction   *Transaction   `json:"transaction,omitempty"`
+	FileName      string         `json:"file_name"`
+	FilePath      string         `json:"file_path"` // Relative path in storage
+	MimeType      string         `json:"mime_type"` // e.g., "image/jpeg", "application/pdf"
+	Size          int64          `json:"size"`      // File size in bytes
+	CreatedAt     time.Time      `json:"created_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// AuditLog tracks all changes for debugging and compliance.
+type AuditLog struct {
+	ID         string         `gorm:"primaryKey" json:"id"`
+	TenantID   string         `gorm:"index" json:"tenant_id"`
+	UserID     string         `gorm:"index" json:"user_id"`
+	User       User           `json:"user,omitempty"`
+	Action     string         `json:"action"`     // "create", "update", "delete"
+	EntityType string         `json:"entity_type"` // "transaction", "account", etc.
+	EntityID   string         `json:"entity_id"`
+	OldValue   string         `json:"old_value,omitempty"` // JSON of previous state
+	NewValue   string         `json:"new_value,omitempty"` // JSON of new state
+	IPAddress  string         `json:"ip_address,omitempty"`
+	UserAgent  string         `json:"user_agent,omitempty"`
+	CreatedAt  time.Time      `json:"created_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RECURRING PAYMENT TRACKING
+// ═══════════════════════════════════════════════════════════════════════════
+
+// RecurringInstance tracks generated transactions from recurring payments.
+type RecurringInstance struct {
+	ID                 string            `gorm:"primaryKey" json:"id"`
+	RecurringPaymentID string            `gorm:"index" json:"recurring_payment_id"`
+	RecurringPayment   RecurringPayment  `json:"recurring_payment,omitempty"`
+	TransactionID      *string           `gorm:"index" json:"transaction_id,omitempty"`
+	Transaction        *Transaction      `json:"transaction,omitempty"`
+	DueDate            time.Time         `json:"due_date"`
+	Status             string            `json:"status" gorm:"default:'pending'"` // "pending", "processed", "skipped"
+	CreatedAt          time.Time         `json:"created_at"`
+	DeletedAt          gorm.DeletedAt    `gorm:"index" json:"-"`
+}
